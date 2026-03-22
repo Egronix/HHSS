@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Моя Тапалка</title>
+    <style>
+        /* --- ДИЗАЙН --- */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a2e;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .score-container {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 50px;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        /* Твоя монета */
+        #coin {
+            width: 250px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.05s ease;
+            -webkit-user-drag: none;
+            z-index: 50;
+            background-color: #333;
+        }
+
+        #coin:active {
+            transform: scale(0.92);
+        }
+
+        /* --- АНИМАЦИИ --- */
+
+        /* 1. Всплывающие +1 */
+        .floating-text {
+            position: absolute;
+            color: #4cd137;
+            font-size: 28px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 0.8s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+        /* 2. Падающие смайлики 🔞 🍆 */
+        .falling-emoji {
+            position: absolute;
+            top: -50px;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 60;
+            animation: fallDown 2s linear forwards;
+        }
+
+        @keyframes fallDown {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        /* 3. Надпись "Максим спит" */
+        .maxim-text {
+            position: absolute;
+            color: #ff4757;
+            font-size: 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            animation: popOut 1.5s ease-out forwards;
+            text-align: center;
+        }
+
+        @keyframes popOut {
+            0% { transform: scale(0.2) translateY(0); opacity: 0; }
+            20% { transform: scale(1.2) translateY(-20px); opacity: 1; }
+            80% { transform: scale(1) translateY(-40px); opacity: 1; }
+            100% { transform: scale(1.5) translateY(-80px); opacity: 0; }
+        }
+
+        /* 4. Едущее инвалидное кресло */
+        .wheelchair {
+            position: absolute;
+            bottom: 20px; /* Отступ снизу */
+            font-size: 60px; /* Размер коляски */
+            z-index: 80;
+            pointer-events: none;
+            /* Анимация: едет 4 секунды, с одинаковой скоростью, бесконечно */
+            animation: driveAcross 4s linear infinite; 
+        }
+
+        @keyframes driveAcross {
+            0% { left: -100px; transform: scaleX(-1); } /* Начинает за экраном слева, развернута вправо */
+            100% { left: 100vw; transform: scaleX(-1); } /* Уезжает за экран справа */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- МУЗЫКА -->
+    <audio id="bgMusic" loop>
+        <source src="ТВОЯ_МУЗЫКА.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="score-container">
+        Счет: <span id="score">0</span>
+    </div>
+
+    <!-- ТВОЕ ФОТО ТУТ. Не забудь поменять 1.png на название своей картинки! -->
+    <img id="coin" src="Group1.png" alt="Моя монета" draggable="false">
+
+    <!-- ИНВАЛИДНОЕ КРЕСЛО -->
+    <div class="wheelchair">♿</div>
+
+    <script>
+        const coin = document.getElementById('coin');
+        const scoreElement = document.getElementById('score');
+        const bgMusic = document.getElementById('bgMusic');
+        
+        let isMusicPlaying = false;
+        bgMusic.volume = 0.5;
+
+        let score = localStorage.getItem('myTapScore') ? parseInt(localStorage.getItem('myTapScore')) : 0;
+        scoreElement.textContent = score;
+
+        const emojis = ['🔞', '🍆'];
+
+        coin.addEventListener('pointerdown', function(event) {
+            
+            if (!isMusicPlaying) {
+                bgMusic.play();
+                isMusicPlaying = true;
+            }
+
+            score++;
+            scoreElement.textContent = score;
+            localStorage.setItem('myTapScore', score);
+
+            createFloatingPlus(event.clientX, event.clientY);
+            createFallingEmoji();
+            createMaximText();
+        });
+
+        function createFloatingPlus(x, y) {
+            const plusOne = document.createElement('div');
+            plusOne.classList.add('floating-text');
+            plusOne.textContent = '+1';
+            plusOne.style.left = (x - 15) + 'px';
+            plusOne.style.top = (y - 20) + 'px';
+            document.body.appendChild(plusOne);
+            setTimeout(() => plusOne.remove(), 800);
+        }
+
+        function createFallingEmoji() {
+            const emojiEl = document.createElement('div');
+            emojiEl.classList.add('falling-emoji');
+            
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            emojiEl.textContent = randomEmoji;
+            
+            const randomX = Math.random() * 90 + 5; 
+            emojiEl.style.left = randomX + 'vw';
+            
+            document.body.appendChild(emojiEl);
+            setTimeout(() => emojiEl.remove(), 2000);
+        }
+
+        function createMaximText() {
+            const maxim = document.createElement('div');
+            maxim.classList.add('maxim-text');
+            maxim.textContent = 'Максим спит';
+            
+            const randomX = Math.random() * 70 + 15;
+            const randomY = Math.random() * 70 + 15;
+            
+            maxim.style.left = randomX + 'vw';
+            maxim.style.top = randomY + 'vh';
+            
+            document.body.appendChild(maxim);
+            setTimeout(() => maxim.remove(), 1500);
+        }
+    </script>
+</body>
+</html>
