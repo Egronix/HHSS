@@ -14,19 +14,58 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #1a1a2e;
             color: white;
             font-family: 'Arial', sans-serif;
             user-select: none;
             overflow: hidden;
             position: relative;
+            
+            /* Настройки для плавного переключения фонов уровней */
+            background-color: #1a1a2e; 
+            background-size: cover;    
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.8s ease, background-color 0.8s ease; 
+        }
+
+        /* Кнопка сброса счета */
+        #resetBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #resetBtn:hover { background-color: #ff6b81; }
+        #resetBtn:active { transform: scale(0.95); }
+
+        /* Надпись текущего уровня */
+        #levelDisplay {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            z-index: 100;
         }
 
         .score-container {
-            font-size: 40px;
+            font-size: 50px;
             font-weight: bold;
-            margin-bottom: 50px;
-            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 40px;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
             z-index: 100;
         }
 
@@ -50,7 +89,6 @@
 
         /* --- АНИМАЦИИ --- */
 
-        /* 1. Всплывающие +1 */
         .floating-text {
             position: absolute;
             color: #4cd137;
@@ -66,7 +104,6 @@
             100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
         }
 
-        /* 2. Падающие смайлики 🔞 🍆 */
         .falling-emoji {
             position: absolute;
             top: -50px;
@@ -81,7 +118,6 @@
             100% { transform: translateY(110vh) rotate(360deg); }
         }
 
-        /* 3. Надпись "Максим спит" */
         .maxim-text {
             position: absolute;
             color: #ff4757;
@@ -102,35 +138,39 @@
             100% { transform: scale(1.5) translateY(-80px); opacity: 0; }
         }
 
-        /* 4. Едущее инвалидное кресло */
         .wheelchair {
             position: absolute;
-            bottom: 20px; /* Отступ снизу */
-            font-size: 60px; /* Размер коляски */
+            bottom: 20px;
+            font-size: 60px;
             z-index: 80;
             pointer-events: none;
-            /* Анимация: едет 4 секунды, с одинаковой скоростью, бесконечно */
             animation: driveAcross 4s linear infinite; 
         }
 
         @keyframes driveAcross {
-            0% { left: -100px; transform: scaleX(-1); } /* Начинает за экраном слева, развернута вправо */
-            100% { left: 100vw; transform: scaleX(-1); } /* Уезжает за экран справа */
+            0% { left: -100px; transform: scaleX(-1); }
+            100% { left: 100vw; transform: scaleX(-1); }
         }
     </style>
 </head>
 <body>
 
-    <!-- МУЗЫКА -->
+    <!-- МУЗЫКА (Я вписал название файла music.mp3) -->
     <audio id="bgMusic" loop>
-        <source src="ТВОЯ_МУЗЫКА.mp3" type="audio/mpeg">
+        <source src="music.mp3" type="audio/mpeg">
     </audio>
+
+    <!-- КНОПКА СБРОСА СЧЕТА -->
+    <button id="resetBtn">Удалить счет</button>
+
+    <!-- НАДПИСЬ УРОВНЯ -->
+    <div id="levelDisplay">УРОВЕНЬ 1</div>
 
     <div class="score-container">
         Счет: <span id="score">0</span>
     </div>
 
-    <!-- ТВОЕ ФОТО ТУТ. Не забудь поменять 1.png на название своей картинки! -->
+    <!-- МОНЕТА -->
     <img id="coin" src="Group1.png" alt="Моя монета" draggable="false">
 
     <!-- ИНВАЛИДНОЕ КРЕСЛО -->
@@ -140,31 +180,93 @@
         const coin = document.getElementById('coin');
         const scoreElement = document.getElementById('score');
         const bgMusic = document.getElementById('bgMusic');
+        const resetBtn = document.getElementById('resetBtn'); 
+        const levelDisplay = document.getElementById('levelDisplay');
         
         let isMusicPlaying = false;
         bgMusic.volume = 0.5;
 
+        // Загружаем счет при открытии сайта
         let score = localStorage.getItem('myTapScore') ? parseInt(localStorage.getItem('myTapScore')) : 0;
         scoreElement.textContent = score;
 
         const emojis = ['🔞', '🍆'];
+        let currentLevel = -1; 
 
+        // --- ЛОГИКА УРОВНЕЙ ---
+        function checkLevel() {
+            let newLevel = 1;
+
+            // Настройки очков для уровней
+            if (score >= 150) {
+                newLevel = 3;
+            } else if (score >= 50) {
+                newLevel = 2;
+            } else {
+                newLevel = 1;
+            }
+
+            // Переключаем картинки, если уровень изменился
+            if (newLevel !== currentLevel) {
+                currentLevel = newLevel;
+
+                if (currentLevel === 1) {
+                    levelDisplay.textContent = "УРОВЕНЬ 1"; 
+                    coin.src = "Group1.png"; // Файл для 1 уровня
+                    document.body.style.backgroundImage = "none";
+                    document.body.style.backgroundColor = "#1a1a2e";
+                } else if (currentLevel === 2) {
+                    levelDisplay.textContent = "УРОВЕНЬ 2"; 
+                    coin.src = "coin2.png";  // Файл монеты для 2 уровня
+                    document.body.style.backgroundImage = "url('bg2.jpg')"; // Файл фона для 2 уровня
+                    document.body.style.backgroundColor = "#4a0e2e"; 
+                } else if (currentLevel === 3) {
+                    levelDisplay.textContent = "УРОВЕНЬ 3"; 
+                    coin.src = "coin3.png";  // Файл монеты для 3 уровня
+                    document.body.style.backgroundImage = "url('bg3.jpg')"; // Файл фона для 3 уровня
+                    document.body.style.backgroundColor = "#0e4a1a"; 
+                }
+            }
+        }
+
+        // Проверяем уровень при запуске
+        checkLevel();
+
+        // --- ЛОГИКА КЛИКА ПО МОНЕТЕ ---
         coin.addEventListener('pointerdown', function(event) {
             
+            // Включаем музыку по первому клику
             if (!isMusicPlaying) {
-                bgMusic.play();
+                bgMusic.play().catch(e => console.log("Браузер пока заблокировал музыку"));
                 isMusicPlaying = true;
             }
 
+            // Добавляем счет
             score++;
             scoreElement.textContent = score;
             localStorage.setItem('myTapScore', score);
 
+            // Проверяем, не повысился ли уровень
+            checkLevel();
+
+            // Запускаем анимации
             createFloatingPlus(event.clientX, event.clientY);
             createFallingEmoji();
             createMaximText();
         });
 
+        // --- ЛОГИКА КНОПКИ УДАЛЕНИЯ СЧЕТА ---
+        resetBtn.addEventListener('click', function() {
+            const isConfirmed = confirm("Ты точно хочешь удалить весь счет и начать заново?");
+            if (isConfirmed) {
+                score = 0; 
+                scoreElement.textContent = score; 
+                localStorage.setItem('myTapScore', 0); 
+                checkLevel(); // Возвращаемся на 1 уровень
+            }
+        });
+
+        // --- ФУНКЦИИ АНИМАЦИЙ ---
         function createFloatingPlus(x, y) {
             const plusOne = document.createElement('div');
             plusOne.classList.add('floating-text');
@@ -178,13 +280,9 @@
         function createFallingEmoji() {
             const emojiEl = document.createElement('div');
             emojiEl.classList.add('falling-emoji');
-            
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             emojiEl.textContent = randomEmoji;
-            
-            const randomX = Math.random() * 90 + 5; 
-            emojiEl.style.left = randomX + 'vw';
-            
+            emojiEl.style.left = (Math.random() * 90 + 5) + 'vw';
             document.body.appendChild(emojiEl);
             setTimeout(() => emojiEl.remove(), 2000);
         }
@@ -193,13 +291,8 @@
             const maxim = document.createElement('div');
             maxim.classList.add('maxim-text');
             maxim.textContent = 'Максим спит';
-            
-            const randomX = Math.random() * 70 + 15;
-            const randomY = Math.random() * 70 + 15;
-            
-            maxim.style.left = randomX + 'vw';
-            maxim.style.top = randomY + 'vh';
-            
+            maxim.style.left = (Math.random() * 70 + 15) + 'vw';
+            maxim.style.top = (Math.random() * 70 + 15) + 'vh';
             document.body.appendChild(maxim);
             setTimeout(() => maxim.remove(), 1500);
         }
